@@ -1,0 +1,137 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  /* ---- Color tokens: "vital sign" palette ---- */
+  --color-ink: #0B1220;          /* base background — deep clinical navy */
+  --color-ink-soft: #101B30;     /* elevated surface on dark */
+  --color-ink-softer: #16223B;   /* card surface */
+  --color-line: #1E2A3F;         /* hairline borders on dark */
+  --color-mist: #F7F9FC;         /* light surface */
+  --color-mist-soft: #EEF2F8;
+  --color-slate: #8A93A6;        /* secondary text */
+  --color-slate-dim: #5C6478;
+  --color-vital: #4ADE9E;        /* signature mint — "pulse" green */
+  --color-vital-dim: #2FAE79;
+  --color-coral: #FF8B6B;        /* warm accent — alerts / human warmth */
+  --color-coral-dim: #E96F4F;
+  --color-amber: #F2B84B;        /* caution / moderate urgency */
+  --color-red: #FF5C6C;          /* urgent */
+  --color-white: #FFFFFF;
+
+  /* ---- Type ---- */
+  --font-display: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+  --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+
+  --radius-card: 20px;
+  --radius-pill: 999px;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--color-ink);
+  color: var(--color-mist);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--color-vital);
+  color: var(--color-ink);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--color-ink); }
+::-webkit-scrollbar-thumb { background: var(--color-line); border-radius: 999px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-slate-dim); }
+
+/* Focus visibility for keyboard nav */
+:focus-visible {
+  outline: 2px solid var(--color-vital);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Utility: gradient text */
+.text-gradient-vital {
+  background: linear-gradient(120deg, #4ADE9E 0%, #8FE8C4 45%, #4ADE9E 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Utility: ECG-style dashed pulse divider */
+.pulse-divider {
+  height: 1px;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--color-line) 0px, var(--color-line) 6px,
+    transparent 6px, transparent 12px
+  );
+}
+
+/* Card grain / noise texture overlay for depth */
+.grain-overlay {
+  position: relative;
+}
+.grain-overlay::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+.animate-float-slow {
+  animation: float-slow 6s ease-in-out infinite;
+}
+
+@keyframes blink-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.animate-blink-dot {
+  animation: blink-dot 1.6s ease-in-out infinite;
+}
+
+/* Form inputs used across auth + logging forms */
+.auth-input {
+  width: 100%;
+  background: var(--color-ink-softer);
+  border: 1px solid var(--color-line);
+  border-radius: 12px;
+  padding: 0.7rem 0.9rem;
+  color: var(--color-mist);
+  font-size: 0.9rem;
+  transition: border-color 0.2s ease;
+}
+.auth-input::placeholder {
+  color: var(--color-slate-dim);
+}
+.auth-input:focus {
+  outline: none;
+  border-color: var(--color-vital);
+}
