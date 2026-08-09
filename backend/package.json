@@ -6,7 +6,7 @@
   "description": "Aira AI Personal Healthcare Copilot — backend (Vercel serverless functions + local dev server)",
   "scripts": {
     "dev": "tsx watch dev-server.ts",
-    "build": "tsc --noEmit",
+    "build": "echo 'No build step needed for Vercel'",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
