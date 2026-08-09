@@ -326,6 +326,8 @@ function describeLog(log: HealthLogEntry) {
       return `Sleep — ${log.sleepHours}h`;
     case 'note':
       return `Note — ${log.note}`;
+    case 'medication':
+      return `Medication — ${log.status === 'taken' ? 'Took' : 'Skipped'} ${log.medicationName}${log.medicationDosage ? ` (${log.medicationDosage})` : ''} for ${log.medicationTimeOfDay || 'Anytime'}`;
     default:
       return 'Entry';
   }

@@ -186,16 +186,32 @@ function MedicationEditor({
   const [name, setName] = useState('');
   const [dosage, setDosage] = useState('');
   const [frequency, setFrequency] = useState('');
+  const [selectedTimes, setSelectedTimes] = useState<string[]>([]);
+
+  const TIMES = ['Morning', 'Afternoon', 'Evening', 'Night'];
+
+  function toggleTime(time: string) {
+    setSelectedTimes((prev) =>
+      prev.includes(time) ? prev.filter((t) => t !== time) : [...prev, time]
+    );
+  }
 
   function add() {
     if (!name.trim()) return;
     setMedications([
       ...medications,
-      { id: crypto.randomUUID(), name: name.trim(), dosage: dosage.trim(), frequency: frequency.trim() },
+      {
+        id: crypto.randomUUID(),
+        name: name.trim(),
+        dosage: dosage.trim(),
+        frequency: frequency.trim(),
+        timeOfDay: selectedTimes,
+      },
     ]);
     setName('');
     setDosage('');
     setFrequency('');
+    setSelectedTimes([]);
   }
 
   return (
@@ -204,14 +220,28 @@ function MedicationEditor({
         {medications.map((m) => (
           <div key={m.id} className="flex items-center justify-between px-4 py-3 rounded-xl bg-ink border border-line">
             <div>
-              <span className="text-sm text-mist font-medium">{m.name}</span>
-              <span className="text-xs text-slate-dim ml-2">
-                {[m.dosage, m.frequency].filter(Boolean).join(' · ')}
-              </span>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-mist font-medium">{m.name}</span>
+                <span className="text-xs text-slate-dim">
+                  {[m.dosage, m.frequency].filter(Boolean).join(' · ')}
+                </span>
+              </div>
+              {m.timeOfDay && m.timeOfDay.length > 0 && (
+                <div className="flex flex-wrap gap-1 mt-1.5">
+                  {m.timeOfDay.map((t) => (
+                    <span
+                      key={t}
+                      className="text-[10px] font-mono font-medium px-2 py-0.5 rounded-full bg-vital/10 text-vital border border-vital/25"
+                    >
+                      {t}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
             <button
               onClick={() => setMedications(medications.filter((med) => med.id !== m.id))}
-              className="text-slate-dim hover:text-coral"
+              className="text-slate-dim hover:text-coral transition-colors"
             >
               <X size={14} />
             </button>
@@ -219,20 +249,44 @@ function MedicationEditor({
         ))}
         {medications.length === 0 && <p className="text-sm text-slate-dim">No medications added yet</p>}
       </div>
-      <div className="grid sm:grid-cols-3 gap-2">
-        <input className="auth-input" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
-        <input className="auth-input" placeholder="Dosage (e.g. 10mg)" value={dosage} onChange={(e) => setDosage(e.target.value)} />
-        <div className="flex gap-2">
+      <div className="space-y-3">
+        <div className="grid sm:grid-cols-3 gap-2">
+          <input className="auth-input" placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
+          <input className="auth-input" placeholder="Dosage (e.g. 10mg)" value={dosage} onChange={(e) => setDosage(e.target.value)} />
           <input
             className="auth-input"
             placeholder="Frequency (e.g. daily)"
             value={frequency}
             onChange={(e) => setFrequency(e.target.value)}
           />
+        </div>
+        <div className="flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 p-3 rounded-xl bg-ink border border-line">
+          <div className="flex flex-col gap-1">
+            <span className="text-xs font-mono text-slate-dim">Scheduled Times</span>
+            <div className="flex flex-wrap gap-1.5">
+              {TIMES.map((time) => {
+                const isSelected = selectedTimes.includes(time);
+                return (
+                  <button
+                    key={time}
+                    type="button"
+                    onClick={() => toggleTime(time)}
+                    className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                      isSelected
+                        ? 'bg-vital/15 text-vital border-vital/40'
+                        : 'bg-ink-softer text-slate border-line hover:text-mist hover:border-slate'
+                    }`}
+                  >
+                    {time}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
           <button
             type="button"
             onClick={add}
-            className="flex-shrink-0 flex items-center justify-center h-11 w-11 rounded-xl border border-line text-slate hover:text-vital hover:border-vital/40 transition-colors"
+            className="flex-shrink-0 flex items-center justify-center h-11 w-11 rounded-xl bg-vital text-ink hover:bg-vital-dim transition-colors self-end"
           >
             <Plus size={16} />
           </button>

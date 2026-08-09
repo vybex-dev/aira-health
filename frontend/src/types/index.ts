@@ -25,7 +25,7 @@ export interface MedicationEntry {
 export interface HealthLogEntry {
   id: string;
   uid: string;
-  type: 'symptom' | 'vitals' | 'mood' | 'sleep' | 'note';
+  type: 'symptom' | 'vitals' | 'mood' | 'sleep' | 'note' | 'medication';
   createdAt: number;
   // symptom
   symptom?: string;
@@ -42,6 +42,12 @@ export interface HealthLogEntry {
   sleepHours?: number;
   // free text
   note?: string;
+  // medication tracking
+  medicationId?: string;
+  medicationName?: string;
+  medicationDosage?: string;
+  medicationTimeOfDay?: string;
+  status?: 'taken' | 'skipped';
 }
 
 export interface ChatMessage {

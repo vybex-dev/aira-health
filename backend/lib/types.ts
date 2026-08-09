@@ -5,6 +5,7 @@ export interface MedicationEntry {
   name: string;
   dosage: string;
   frequency: string;
+  timeOfDay?: string[];
 }
 
 export interface UserProfile {

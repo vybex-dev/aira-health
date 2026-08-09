@@ -1,9 +1,9 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { HeartPulse, Moon, Smile, Plus, ArrowRight, MessagesSquare } from 'lucide-react';
+import { HeartPulse, Moon, Smile, Plus, ArrowRight, MessagesSquare, Check, Pill, Clock } from 'lucide-react';
 import { useAuthStore } from '@/store/useAuthStore';
-import { subscribeToLogs } from '@/lib/firestore';
+import { subscribeToLogs, addLogEntry } from '@/lib/firestore';
 import { getDailyInsight } from '@/lib/api';
 import type { HealthLogEntry } from '@/types';
 import AiraOrb from '@/components/three/AiraOrb';
@@ -19,6 +19,62 @@ export default function DashboardPage() {
     if (!user) return;
     return subscribeToLogs(user.uid, setLogs, 30);
   }, [user]);
+
+  const todayMedications = useMemo(() => {
+    if (!profile?.medications) return [];
+
+    const list: {
+      medicationId: string;
+      name: string;
+      dosage: string;
+      timeOfDay: string;
+      logged?: HealthLogEntry;
+    }[] = [];
+
+    profile.medications.forEach((m) => {
+      const times = m.timeOfDay && m.timeOfDay.length > 0 ? m.timeOfDay : ['Anytime'];
+      times.forEach((t) => {
+        const logged = logs.find(
+          (log) =>
+            log.type === 'medication' &&
+            log.medicationId === m.id &&
+            log.medicationTimeOfDay === t &&
+            isToday(log.createdAt)
+        );
+        list.push({
+          medicationId: m.id,
+          name: m.name,
+          dosage: m.dosage || '',
+          timeOfDay: t,
+          logged,
+        });
+      });
+    });
+
+    const timeWeights: Record<string, number> = {
+      Morning: 1,
+      Afternoon: 2,
+      Evening: 3,
+      Night: 4,
+      Anytime: 5,
+    };
+    return list.sort((a, b) => (timeWeights[a.timeOfDay] || 99) - (timeWeights[b.timeOfDay] || 99));
+  }, [profile?.medications, logs]);
+
+  async function handleMedicationAction(
+    med: { medicationId: string; name: string; dosage: string; timeOfDay: string },
+    status: 'taken' | 'skipped'
+  ) {
+    if (!user) return;
+    await addLogEntry(user.uid, {
+      type: 'medication',
+      medicationId: med.medicationId,
+      medicationName: med.name,
+      medicationDosage: med.dosage,
+      medicationTimeOfDay: med.timeOfDay,
+      status,
+    });
+  }
 
   const latestVitals = useMemo(() => logs.find((l) => l.type === 'vitals'), [logs]);
   const latestMood = useMemo(() => logs.find((l) => l.type === 'mood'), [logs]);
@@ -154,26 +210,108 @@ export default function DashboardPage() {
         />
       </div>
 
-      {/* Recent activity */}
-      <div className="rounded-[var(--radius-card)] border border-line bg-ink-softer p-7">
-        <h3 className="font-display font-medium text-mist mb-5">Recent activity</h3>
-        {logs.length === 0 ? (
-          <p className="text-sm text-slate-dim py-6 text-center">
-            Nothing logged yet. Your first entry takes about thirty seconds.
-          </p>
-        ) : (
-          <ul className="divide-y divide-line">
-            {logs.slice(0, 6).map((log) => (
-              <li key={log.id} className="py-3.5 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className="h-2 w-2 rounded-full bg-vital flex-shrink-0" />
-                  <span className="text-sm text-mist truncate">{describeLog(log)}</span>
-                </div>
-                <span className="text-xs text-slate-dim font-mono flex-shrink-0">{timeAgo(log.createdAt)}</span>
-              </li>
-            ))}
-          </ul>
-        )}
+      <div className="grid lg:grid-cols-2 gap-6 mb-8">
+        {/* Medication Tracker */}
+        <div className="rounded-[var(--radius-card)] border border-line bg-ink-softer p-7 flex flex-col">
+          <div className="flex items-center justify-between mb-5">
+            <h3 className="font-display font-medium text-mist">Today's medications</h3>
+            <span className="text-xs text-slate-dim font-mono flex items-center gap-1">
+              <Clock size={12} /> Tracker
+            </span>
+          </div>
+          {todayMedications.length === 0 ? (
+            <div className="flex-1 flex flex-col items-center justify-center py-8 text-center">
+              <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-vital/5 text-vital/40 mb-3">
+                <Pill size={18} />
+              </span>
+              <p className="text-sm text-slate-dim">No scheduled medications today.</p>
+              <button
+                onClick={() => navigate('/app/profile')}
+                className="text-xs text-vital mt-2 hover:underline cursor-pointer"
+              >
+                Configure medications in Profile
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-3.5 overflow-y-auto max-h-[350px] pr-1">
+              {todayMedications.map((med) => {
+                const key = `${med.medicationId}-${med.timeOfDay}`;
+                const isLogged = !!med.logged;
+                const status = med.logged?.status;
+                const timeStr = med.logged ? new Date(med.logged.createdAt).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' }) : '';
+
+                return (
+                  <div
+                    key={key}
+                    className={`flex items-center justify-between p-3.5 rounded-xl border transition-all ${
+                      isLogged
+                        ? 'bg-ink/30 border-line/40 opacity-70'
+                        : 'bg-ink border-line hover:border-vital/25'
+                    }`}
+                  >
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-medium text-mist truncate">{med.name}</span>
+                        {med.dosage && (
+                          <span className="text-xs text-slate-dim font-mono">{med.dosage}</span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 mt-1">
+                        <span className="text-[10px] font-mono font-medium px-1.5 py-0.5 rounded bg-vital/15 text-vital border border-vital/20">
+                          {med.timeOfDay}
+                        </span>
+                        {isLogged && (
+                          <span className={`text-xs ${status === 'taken' ? 'text-vital' : 'text-coral'}`}>
+                            {status === 'taken' ? `Taken at ${timeStr}` : 'Skipped'}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {!isLogged && (
+                      <div className="flex gap-1.5">
+                        <button
+                          onClick={() => handleMedicationAction(med, 'skipped')}
+                          className="px-2.5 py-1.5 rounded-lg border border-line text-xs text-slate hover:text-coral hover:border-coral/40 transition-colors cursor-pointer"
+                        >
+                          Skip
+                        </button>
+                        <button
+                          onClick={() => handleMedicationAction(med, 'taken')}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-vital text-ink text-xs font-semibold hover:bg-vital-dim transition-colors cursor-pointer"
+                        >
+                          <Check size={12} /> Take
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Recent activity */}
+        <div className="rounded-[var(--radius-card)] border border-line bg-ink-softer p-7">
+          <h3 className="font-display font-medium text-mist mb-5">Recent activity</h3>
+          {logs.length === 0 ? (
+            <p className="text-sm text-slate-dim py-6 text-center">
+              Nothing logged yet. Your first entry takes about thirty seconds.
+            </p>
+          ) : (
+            <ul className="divide-y divide-line">
+              {logs.slice(0, 6).map((log) => (
+                <li key={log.id} className="py-3.5 flex items-center justify-between gap-4">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="h-2 w-2 rounded-full bg-vital flex-shrink-0" />
+                    <span className="text-sm text-mist truncate">{describeLog(log)}</span>
+                  </div>
+                  <span className="text-xs text-slate-dim font-mono flex-shrink-0">{timeAgo(log.createdAt)}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -232,6 +370,16 @@ function moodLabel(mood: number) {
   return ['', 'Low', 'Meh', 'Okay', 'Good', 'Great'][mood] || '—';
 }
 
+function isToday(timestamp: number) {
+  const date = new Date(timestamp);
+  const today = new Date();
+  return (
+    date.getDate() === today.getDate() &&
+    date.getMonth() === today.getMonth() &&
+    date.getFullYear() === today.getFullYear()
+  );
+}
+
 function describeLog(log: HealthLogEntry) {
   switch (log.type) {
     case 'symptom':
@@ -246,6 +394,8 @@ function describeLog(log: HealthLogEntry) {
       return `Sleep: ${log.sleepHours} hours`;
     case 'note':
       return log.note || 'Note added';
+    case 'medication':
+      return `${log.status === 'taken' ? 'Took' : 'Skipped'} ${log.medicationName}${log.medicationDosage ? ` (${log.medicationDosage})` : ''} for ${log.medicationTimeOfDay || 'Anytime'}`;
     default:
       return 'Entry logged';
   }
