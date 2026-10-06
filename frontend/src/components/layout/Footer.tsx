@@ -1,4 +1,5 @@
 import { Activity } from 'lucide-react';
+import PoweredByVybex from '@/components/layout/PoweredByVybex';
 
 export default function Footer() {
   return (
@@ -42,6 +43,7 @@ export default function Footer() {
         <div className="flex flex-col sm:flex-row justify-between items-center gap-3 text-xs text-slate-dim">
           <span>© {new Date().getFullYear()} Aira Health. All rights reserved.</span>
           <span className="font-mono">Not a substitute for professional medical advice.</span>
+          <PoweredByVybex />
         </div>
       </div>
     </footer>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { signOut } from 'firebase/auth';
 import {
   Activity,
@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { auth } from '@/lib/firebase';
 import { useAuthStore } from '@/store/useAuthStore';
+import AppFooter from '@/components/layout/AppFooter';
 
 const NAV_ITEMS = [
   { to: '/app', label: 'Overview', icon: LayoutDashboard, end: true },
@@ -25,6 +26,7 @@ const NAV_ITEMS = [
 
 export default function AppShell() {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const { profile, user } = useAuthStore();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -118,8 +120,12 @@ export default function AppShell() {
       )}
 
       {/* Main content */}
-      <main className="flex-1 min-w-0 pt-16 lg:pt-0">
-        <Outlet />
+      <main className="flex-1 min-w-0 pt-16 lg:pt-0 flex flex-col">
+        <div className="flex-1">
+          <Outlet />
+        </div>
+        {/* Chat fills the full viewport height, so it skips the footer */}
+        {pathname !== '/app/chat' && <AppFooter />}
       </main>
     </div>
   );
